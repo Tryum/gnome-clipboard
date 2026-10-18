@@ -1,4 +1,4 @@
-/* 
+/*
  * Gnome Clipboard - Premium & Modern UI
  * Inspired by Libadwaita and GNOME 45+ Design Principles
  * GNOME Shell compatible: no CSS variables, no :root
@@ -63,12 +63,12 @@
 }
 
 .gnome-clipboard .action-bar-container {
-    spacing: 4px;
+    padding: 4px;
 }
 
 .gnome-clipboard .nav-group,
 .gnome-clipboard .action-group {
-    spacing: 2px;
+    padding: 2px;
 }
 
 /* ─── Action Buttons ──────────────────────────────────────── */
@@ -235,4 +235,11 @@
     font-size: 1.1em;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.45);
+}
+
+/* ─── Preferences ─────────────────────────────────────────── */
+.prefs-page .pref-input {
+    min-width: 220px;
+    max-width: 360px;
+    width: auto;
 }
