@@ -174,10 +174,9 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   private _checkClipboard() {
     if (!this._actionBar.enable() || this._settings.privateMode()) return;
 
-    const ST = (St as any);
-    const clipboard = ST['Clipboard']['get_default']();
+    const clipboard = St.Clipboard.get_default();
     
-    clipboard.get_text(ST['ClipboardType']['CLIPBOARD'], (_cb: any, text: string) => {
+    clipboard.get_text(St.ClipboardType.CLIPBOARD, (_cb: any, text: string) => {
         try {
             if (text && text.trim().length > 0) {
                 if (this._addClipboard(text)) {
@@ -194,10 +193,9 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   }
 
   private _checkImageClipboard() {
-    const ST = (St as any);
-    const clipboard = ST['Clipboard']['get_default']();
+    const clipboard = St.Clipboard.get_default();
     
-    clipboard.get_content(ST['ClipboardType']['CLIPBOARD'], 'image/png', (_cb: any, bytes: any) => {
+    clipboard.get_content(St.ClipboardType.CLIPBOARD, 'image/png', (_cb: any, bytes: any) => {
         try {
             if (bytes && bytes.get_size() > 0) {
                 this._processImageBytes(bytes);
@@ -233,8 +231,7 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   }
 
   private async _copyToClipboard(item: ClipboardItem.ClipboardItem) {
-    const ST = (St as any);
-    const clipboard = ST['Clipboard']['get_default']();
+    const clipboard = St.Clipboard.get_default();
 
     if (item.type === ClipboardItem.ClipboardItemType.IMAGE && item.imagePath) {
         let file = Gio.file_new_for_path(item.imagePath);
@@ -243,14 +240,14 @@ class ClipboardPanelInternal extends PanelMenu.Button {
                 let [contents] = file.load_contents_finish(res);
                 if (contents) {
                     let bytes = GLib.Bytes.new(contents);
-                    clipboard.set_content(ST['ClipboardType']['CLIPBOARD'], 'image/png', bytes);
+                    clipboard.set_content(St.ClipboardType.CLIPBOARD, 'image/png', bytes);
                 }
             } catch (e) {
                 log.error(`Failed to load image for copy: ${e}`);
             }
         });
     } else {
-        clipboard.set_text(ST['ClipboardType']['CLIPBOARD'], item.text);
+        clipboard.set_text(St.ClipboardType.CLIPBOARD, item.text);
     }
     
     this._selectedID = item.id();
