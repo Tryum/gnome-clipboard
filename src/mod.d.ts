@@ -118,6 +118,8 @@ declare module 'resource:///org/gnome/shell/extensions/extension.js' {
 
 declare module 'resource:///org/gnome/shell/extensions/prefs.js' {
     export class ExtensionPreferences {
+        dir: any;
+        path: string;
         getSettings(schema?: string): any;
         gettext(msg: string): string;
     }
@@ -125,6 +127,8 @@ declare module 'resource:///org/gnome/shell/extensions/prefs.js' {
 
 declare module 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js' {
     export class ExtensionPreferences {
+        dir: any;
+        path: string;
         getSettings(schema?: string): any;
         gettext(msg: string): string;
     }

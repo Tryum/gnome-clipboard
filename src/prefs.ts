@@ -8,9 +8,12 @@ import * as Settings from './settings.js';
 
 export default class GnomeClipboardPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window: Adw.PreferencesWindow) {
+        this._loadPreferencesStyle();
+
         const settings = this.getSettings(Settings.SCHEMA_ID);
 
         const page = new Adw.PreferencesPage();
+        page.add_css_class('prefs-page');
         window.add(page);
 
         const group = new Adw.PreferencesGroup({
@@ -24,6 +27,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const historySizeSpin = new Gtk.SpinButton({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
             adjustment: new Gtk.Adjustment({
                 lower: 2,
                 upper: 1000,
@@ -48,6 +52,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         // or just implement a basic version.
         const historySortSpin = new Gtk.SpinButton({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
             adjustment: new Gtk.Adjustment({
                 lower: 0,
                 upper: 2,
@@ -69,6 +74,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const timerSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
         });
         settings.bind(
             Settings.CLIPBOARD_TIMER,
@@ -85,6 +91,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const intervalSpin = new Gtk.SpinButton({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
             adjustment: new Gtk.Adjustment({
                 lower: 100,
                 upper: 100000,
@@ -106,6 +113,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const savePinnedSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
         });
         settings.bind(
             Settings.SAVE_PINNED,
@@ -122,6 +130,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const notificationsSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
+            css_classes: ['pref-input'],
         });
         settings.bind(
             Settings.SHOW_NOTIFICATIONS,
@@ -141,6 +150,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         // Blacklist
         const blacklistRow = new Adw.EntryRow({
             title: this.gettext('Blacklisted App IDs'),
+            css_classes: ['pref-input'],
         });
 
         const blacklistSettings = settings.get_strv(Settings.BLACKLIST).join(', ');
@@ -169,12 +179,32 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         addShortcutRow(Settings.SHORTCUT_PREV, this.gettext('Select Previous Item'));
     }
 
+    private _loadPreferencesStyle(): void {
+        try {
+            const cssPath = this.dir.get_child('stylesheet.css').get_path();
+            const provider = new Gtk.CssProvider();
+            provider.load_from_path(cssPath);
+
+            const display = Gdk.Display.get_default();
+            if (display) {
+                Gtk.StyleContext.add_provider_for_display(
+                    display,
+                    provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                );
+            }
+        } catch (error) {
+            console.error('Failed to load preferences stylesheet:', error);
+        }
+    }
+
     private _createShortcutRow(settings: Gio.Settings, key: string, title: string): Adw.ActionRow {
         const row = new Adw.ActionRow({ title });
 
         const button = new Gtk.Button({
             valign: Gtk.Align.CENTER,
             has_frame: true,
+            css_classes: ['pref-input'],
         });
         row.add_suffix(button);
 

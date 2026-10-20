@@ -20,9 +20,9 @@ ASSET_DIRS = schemas po
 STYLES = $(wildcard $(SRC_DIR)/*.css)
 TS_SOURCES = $(wildcard $(SRC_DIR)/*.ts)
 
-# Colors for output
-GREEN = \033[0;32m
-NC = \033[0m # No Color
+# Colors for output (real ANSI escapes, resolved once at parse time)
+GREEN := $(shell printf '\033[0;32m')
+NC := $(shell printf '\033[0m')
 
 # Tools
 # Use system tsc if available, otherwise fallback to npx (no node_modules required)
