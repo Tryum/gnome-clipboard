@@ -74,7 +74,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const timerSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
-            css_classes: ['pref-input'],
+            css_classes: ['service-switch'],
         });
         settings.bind(
             Settings.CLIPBOARD_TIMER,
@@ -113,7 +113,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const savePinnedSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
-            css_classes: ['pref-input'],
+            css_classes: ['service-switch'],
         });
         settings.bind(
             Settings.SAVE_PINNED,
@@ -130,7 +130,7 @@ export default class GnomeClipboardPreferences extends ExtensionPreferences {
         });
         const notificationsSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
-            css_classes: ['pref-input'],
+            css_classes: ['service-switch'],
         });
         settings.bind(
             Settings.SHOW_NOTIFICATIONS,
