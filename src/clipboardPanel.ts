@@ -231,22 +231,16 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   }
 
   private async _copyToClipboard(item: ClipboardItem.ClipboardItem) {
-    const clipboard = St.Clipboard.get_default();
-
     if (item.type === ClipboardItem.ClipboardItemType.IMAGE && item.imagePath) {
-        let file = Gio.file_new_for_path(item.imagePath);
-        file.load_contents_async(null, (_f: any, res: any) => {
-            try {
-                let [contents] = file.load_contents_finish(res);
-                if (contents) {
-                    let bytes = GLib.Bytes.new(contents);
-                    clipboard.set_content(St.ClipboardType.CLIPBOARD, 'image/png', bytes);
-                }
-            } catch (e) {
-                log.error(`Failed to load image for copy: ${e}`);
-            }
-        });
+        const file = Gio.File.new_for_path(item.imagePath);
+        const [bytes] = file.load_bytes(null);
+        const source = Meta.SelectionSourceMemory.new('image/png', bytes);
+        global.display.get_selection().set_owner(
+            Meta.SelectionType.SELECTION_CLIPBOARD,
+            source
+        );
     } else {
+        const clipboard = St.Clipboard.get_default();
         clipboard.set_text(St.ClipboardType.CLIPBOARD, item.text);
     }
     
