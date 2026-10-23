@@ -43,6 +43,8 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   private _focusTimerID: number = 0;
   private _selectionOwnerChangedID: number = 0;
   private _menuNeedsRebuild: boolean = true;
+  private _loaded: boolean = false;
+  private _destroyed: boolean = false;
 
   constructor(settings: any, _gettext: any, uuid: string, openPrefs: () => void) {
     super(0.0, _("Clipboard"), false);
@@ -71,8 +73,7 @@ class ClipboardPanelInternal extends PanelMenu.Button {
     this.menu.addMenuItem(this._actionBar);
 
     this._setupUI();
-    this._loadHistory();
-    this._setupClipboardMonitoring();
+    this._init();
   }
 
   public init() {
@@ -126,12 +127,28 @@ class ClipboardPanelInternal extends PanelMenu.Button {
       });
   }
 
+  private async _init() {
+    await this._loadHistory();
+    // Only start reacting to clipboard changes once the stored history is in
+    // memory. Otherwise an owner-changed signal can fire while the load is
+    // still pending, schedule a save of the almost-empty in-memory history,
+    // and overwrite the file before it has been read.
+    if (this._destroyed) return;
+    this._setupClipboardMonitoring();
+  }
+
   private async _loadHistory() {
     let history = await this._store.load();
+    if (this._destroyed) return;
+
     if (history && history.length > 0) {
         this._history.setItems(history);
         this._refresh();
+        log.info(`restored ${history.length} clipboard items from ${this._store.path()}`);
     }
+
+    // Nothing may be written back until the stored history has been applied.
+    this._loaded = true;
 
     // Neither monitoring mode reports what is already on the clipboard when the
     // extension starts: `owner-changed` only fires on a change, and the timer
@@ -328,6 +345,7 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   }
 
   private _saveHistoryDebounced() {
+    if (!this._loaded || this._destroyed) return;
     if (this._saveTimerID) GLib.source_remove(this._saveTimerID);
     this._saveTimerID = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
         this._store.save(this._history.getItems());
@@ -343,9 +361,22 @@ class ClipboardPanelInternal extends PanelMenu.Button {
   }
 
   destroy() {
-    if (this._clipboardTimerID) GLib.source_remove(this._clipboardTimerID);
-    if (this._saveTimerID) GLib.source_remove(this._saveTimerID);
-    if (this._focusTimerID) GLib.source_remove(this._focusTimerID);
+    this._destroyed = true;
+
+    if (this._clipboardTimerID) {
+      GLib.source_remove(this._clipboardTimerID);
+      this._clipboardTimerID = 0;
+    }
+    if (this._saveTimerID) {
+      // A debounced change is still pending: don't drop it on logout/disable.
+      GLib.source_remove(this._saveTimerID);
+      this._saveTimerID = 0;
+      if (this._loaded) this._store.save(this._history.getItems());
+    }
+    if (this._focusTimerID) {
+      GLib.source_remove(this._focusTimerID);
+      this._focusTimerID = 0;
+    }
 
     if (this._openStateChangedID) {
       this.menu.disconnect(this._openStateChangedID);

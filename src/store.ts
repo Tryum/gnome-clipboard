@@ -19,6 +19,10 @@ export class Store {
     }
   }
 
+  public path(): string {
+    return this._path;
+  }
+
   async load(): Promise<any> {
     log.info(`loading history async from ${this._path}`);
 
@@ -38,26 +42,59 @@ export class Store {
         });
       });
 
-      let contents = Array.isArray(result) ? result[0] : result;
-
-      if (contents) {
-        let text = this._safeDecode(contents);
-        if (text && text.trim().length > 0) {
-            // Remove Byte Order Mark (BOM) if present
-            text = text.replace(/^\uFEFF/, '').trim();
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                log.error(`JSON parse failed, resetting: ${e}`);
-                return [];
-            }
+      // GJS returns the method's return value together with its out
+      // parameters: [ok: boolean, contents: Uint8Array, etag: string].
+      // The old code assumed [contents, etag], so it fed the boolean `true`
+      // to the decoder -- `new Uint8Array(true)` is a single NUL byte -- and
+      // every startup ended in "JSON parse failed" with the history dropped.
+      // Accept the two-value form too, for older GJS releases.
+      let ok = true;
+      let contents: any;
+      if (Array.isArray(result)) {
+        if (result[0] instanceof Uint8Array) {
+          contents = result[0];
+        } else {
+          ok = result[0] !== false;
+          contents = result[1];
         }
+      } else {
+        contents = result;
+      }
+
+      if (!ok || !contents) {
+        return [];
+      }
+
+      let text = this._safeDecode(contents);
+      if (text && text.trim().length > 0) {
+          // Remove Byte Order Mark (BOM) if present
+          text = text.replace(/^\uFEFF/, '').trim();
+          try {
+              return JSON.parse(text);
+          } catch (e) {
+              log.error(`JSON parse failed for ${this._path}: ${e}`);
+              this._preserveUnreadable();
+              return [];
+          }
       }
     } catch (err) {
       log.error(`load history failed: ${err}`);
     }
 
     return [];
+  }
+
+  // Never let one bad read silently destroy the user's history: keep a copy
+  // next to the original before the next save overwrites it.
+  private _preserveUnreadable(): void {
+    try {
+      const backup = `${this._path}.corrupt-${Date.now()}`;
+      Gio.File.new_for_path(this._path).copy(
+        Gio.File.new_for_path(backup), Gio.FileCopyFlags.NONE, null, null);
+      log.warn(`kept unreadable history at ${backup}`);
+    } catch (e) {
+      log.warn(`could not back up unreadable history: ${e}`);
+    }
   }
 
   private _safeDecode(data: any): string {
