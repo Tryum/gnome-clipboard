@@ -38,20 +38,29 @@ export class Store {
         });
       });
 
-      let contents = Array.isArray(result) ? result[0] : result;
+      // GJS returns [ok: boolean, contents: Uint8Array, etag: string]; older
+      // releases returned [contents, etag]. Pick the byte array out of either
+      // form -- the old code assumed [contents, etag] and fed the boolean
+      // `true` to the decoder instead, so every startup failed to parse and
+      // the history was dropped.
+      const contents = Array.isArray(result)
+        ? result.find((v: any) => v instanceof Uint8Array)
+        : result;
 
-      if (contents) {
-        let text = this._safeDecode(contents);
-        if (text && text.trim().length > 0) {
-            // Remove Byte Order Mark (BOM) if present
-            text = text.replace(/^\uFEFF/, '').trim();
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                log.error(`JSON parse failed, resetting: ${e}`);
-                return [];
-            }
-        }
+      if (!contents) {
+        return [];
+      }
+
+      let text = this._safeDecode(contents);
+      if (text && text.trim().length > 0) {
+          // Remove Byte Order Mark (BOM) if present
+          text = text.replace(/^\uFEFF/, '').trim();
+          try {
+              return JSON.parse(text);
+          } catch (e) {
+              log.error(`JSON parse failed for ${this._path}: ${e}`);
+              return [];
+          }
       }
     } catch (err) {
       log.error(`load history failed: ${err}`);
